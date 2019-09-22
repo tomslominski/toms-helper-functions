@@ -1,0 +1,18 @@
+{
+    "name": "tomslominski/toms-helper-functions",
+    "description": "Helper functions for WordPress.",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tom Slominski",
+            "email": "tom@slomin.ski"
+        }
+    ],
+    "require": {
+        "php": ">=7.0.0"
+    },
+  
+    "autoload": {
+        "files": ["src/load.php"]
+    }
+}

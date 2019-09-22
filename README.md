@@ -1,2 +1,2 @@
-# toms-helper-functions
+# Tom's Helper Functions
 Helper functions for WordPress themes.
