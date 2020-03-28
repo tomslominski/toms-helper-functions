@@ -1,7 +1,7 @@
 <?php
 /**
  * Generic utilities for WordPress
- * 
+ *
  * @package Tom's Helper Functions
  * @since 1.0.0
  */
@@ -9,18 +9,86 @@
 namespace TS;
 
 /**
+ * Get the context the package is being run in.
+ *
+ * @return string "plugin" or "theme"
+ */
+function get_context() {
+    $path_parts = explode( DIRECTORY_SEPARATOR, __DIR__ );
+    $key = array_search( 'wp-content', $path_parts );
+    $directory = $path_parts[$key + 1] ?? '';
+
+	return 'plugins' === $directory ? 'plugin' : 'theme';
+}
+
+/**
+ * Get absolute path to plugin or theme.
+ *
+ * @return string Absolute path to package or theme.
+ */
+function get_package_path() {
+	$path_parts = explode( DIRECTORY_SEPARATOR, __DIR__ );
+	$key = array_search( 'wp-content', $path_parts );
+	array_splice( $path_parts, $key + 3 );
+
+	return implode( DIRECTORY_SEPARATOR, $path_parts );
+}
+
+/**
+ * Get version of plugin or theme.
+ *
+ * @return bool|string Plugin or theme version or false on failure.
+ */
+function get_package_version() {
+	switch( get_context() ) {
+		case 'plugin':
+			$plugin = get_plugin_data();
+			return isset( $plugin['Version'] ) && $plugin['Version'] ? $plugin['Version'] : false;
+
+		case 'theme':
+			$theme = wp_get_theme();
+			return $theme->get( 'Version' ) ? $theme->get( 'Version' ) : false;
+
+		default:
+			return false;
+	}
+}
+
+/**
  * Returns theme version from style.css.
  *
- * @return string Theme version.
+ * @return bool|string Theme version.
  */
 function get_theme_version() {
-	$theme = wp_get_theme();
-	return $theme->get( 'Version' );
+	return get_package_version();
+}
+
+/**
+ * Get plugin header data array.
+ *
+ * @return bool|array Array or false on failure.
+ */
+function get_plugin_data() {
+	require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+
+	if( $plugin_path = get_package_path() ) {
+		$plugins = get_plugins();
+		$path_parts = explode( DIRECTORY_SEPARATOR, $plugin_path );
+		$directory = $path_parts[count( $path_parts ) - 1];
+
+		foreach( $plugins as $file => $plugin_data ) {
+			if( false !== strstr( $file, $directory ) ) {
+				return $plugin_data;
+			}
+		}
+	}
+
+	return false;
 }
 
 /**
  * Check if site is running on a dev server.
- * 
+ *
  * @return bool True if running on a dev server.
  */
 function is_dev() {
@@ -29,9 +97,9 @@ function is_dev() {
 
 /**
  * Get parent term of current or provided term ID.
- * 
+ *
  * @param int $term_id Term ID to get parent of.
- * @return bool|WP_Term Parent or false on failure.
+ * @return bool|\WP_Term Parent or false on failure.
  */
 function get_parent_term( $term_id = null ) {
 	$term_id = $term_id ?? get_queried_object_id();
@@ -46,7 +114,7 @@ function get_parent_term( $term_id = null ) {
 
 /**
  * Get the URL to the current queried object.
- * 
+ *
  * @return string|bool URL to the current page or false on failure.
  */
 function get_current_page_link() {
@@ -62,7 +130,7 @@ function get_current_page_link() {
 
 		case 'WP_Term':
 			return get_term_link( $queried_object );
-		
+
 		case 'WP_Post':
 			return get_permalink( $queried_object );
 
@@ -74,9 +142,9 @@ function get_current_page_link() {
 /**
  * Get the Yoast primary category, or if none set, the first relevant post term.
  *
- * @param WP_Post|int $post Post object or ID.
+ * @param \WP_Post|int $post Post object or ID.
  * @param string $taxonomy Relevant taxonomy to get the term for.
- * @return int|bool Term ID or false on failure.
+ * @return \WP_Term|bool Term ID or false on failure.
  */
 function get_primary_category( $post = null, $taxonomy = null ) {
 	$post_id = $post->ID ?? $post ?? get_the_ID();
@@ -98,21 +166,22 @@ function get_primary_category( $post = null, $taxonomy = null ) {
 
 /**
  * Include a template with variables.
- * 
+ *
  * @param string $template Template path.
  * @param array $args Arguments to pass to the template.
  */
 function get_template( $template, $args = [] ) {
-	extract( $args );
-	
-	if( file_exists( get_theme_file_path( $template ) ) ) {
-		include( get_theme_file_path( $template ) );
+	$path = trailingslashit( get_package_path() ) . $template;
+
+	if( file_exists( $path ) ) {
+		extract( $args );
+		include( $path );
 	}
 }
 
 /**
  * Include a template from the template part directory.
- * 
+ *
  * @param string $template Template part name.
  * @param array $args Arguments to pass to the template.
  */
@@ -122,7 +191,7 @@ function get_template_part( $template, $args = [] ) {
 
 /**
  * Get the taxonomy from the current query.
- * 
+ *
  * @return string Taxonomy slug.
  */
 function get_taxonomy_for_query() {
@@ -151,7 +220,7 @@ function get_taxonomy_for_query() {
 
 /**
  * Get the post_type from the current query.
- * 
+ *
  * @return string Post type slug.
  */
 function get_post_type_for_query() {
