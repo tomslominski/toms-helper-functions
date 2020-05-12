@@ -27,11 +27,13 @@ function get_context() {
  * @return string Absolute path to package or theme.
  */
 function get_package_path() {
-	$path_parts = explode( DIRECTORY_SEPARATOR, __DIR__ );
-	$key = array_search( 'wp-content', $path_parts );
-	array_splice( $path_parts, $key + 3 );
+	$package_path = explode( DIRECTORY_SEPARATOR, __DIR__ );
+	$content_path = explode( DIRECTORY_SEPARATOR, WP_CONTENT_DIR );
+	$key = count( $content_path ) + 2;
 
-	return implode( DIRECTORY_SEPARATOR, $path_parts );
+	array_splice( $package_path, $key );
+
+	return implode( DIRECTORY_SEPARATOR, $package_path );
 }
 
 /**
