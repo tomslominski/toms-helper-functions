@@ -94,7 +94,7 @@ function get_plugin_data() {
  * @return bool True if running on a dev server.
  */
 function is_dev() {
-	return (bool) preg_match( '#(localhost|fatwordpress\.co\.uk|local)$#', $_SERVER['HTTP_HOST'] );
+	return !in_array( wp_get_environment_type(), ['production', 'staging'] );
 }
 
 /**
